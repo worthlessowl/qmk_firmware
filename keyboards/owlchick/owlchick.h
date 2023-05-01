@@ -13,10 +13,16 @@
  * The second converts the arguments into a two-dimensional array which
  * represents the switch matrix.
  */
-#define LAYOUT( \
-    k00, k01, k02, \
-      k10,  k12    \
+#define LAYOUT_owlchick_25keys( \
+	K00, K01, K02, K03, K04, \
+	K10, K11, K12, K13, K14, \
+	K20, K21, K22, K23, K24, \
+	K30, K31, K32, K33, K34, \
+	K40, K41, K42, K43, K44  \
 ) { \
-    { k00, k01,   k02 }, \
-    { k10, KC_NO, k12 }  \
+	{ K04,   K14,   K24,   K34,   K44 }, \
+	{ K03,   K13,   K23,   K33,   K43 }, \
+	{ K02,   K12,   K22,   K32,   K42 }, \
+	{ K01,   K11,   K21,   K31,   K41 }, \
+	{ K00,   K10,   K20,   K30,   K40 }  \
 }
