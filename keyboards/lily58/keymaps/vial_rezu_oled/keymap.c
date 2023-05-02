@@ -105,7 +105,6 @@ void render_luna(int LUNA_X, int LUNA_Y);
 void animation_phase(void);
 void print_logo_narrow(void);
 void print_status_narrow(void);
-void print_clear_screen(void);
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
   if (!is_keyboard_master())
@@ -146,7 +145,7 @@ const char PROGMEM mac_logo[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 // #define PREP_FRAMES 1 // uncomment if >1
 
 #    define TAP_FRAMES 2
-#    define TAP_SPEED 2  // above this wpm value typing animation to trigger
+#    define TAP_SPEED 5  // above this wpm value typing animation to trigger
 
 #    define ANIM_FRAME_DURATION 750  // how long each frame lasts in ms
 // #define SLEEP_TIMER 60000 // should sleep after this period of 0 wpm, needs fixing
@@ -167,6 +166,8 @@ uint32_t anim_timer_secondary         = 0;
 uint32_t anim_sleep_secondary         = 0;
 uint32_t active_timer_secondary       = 0;
 uint8_t  current_idle_frame_secondary = 0;
+
+bool is_idle = true;
 
 // Code containing pixel art, contains:
 // 5 idle frames, 1 prep frame, and 2 tap frames
@@ -308,16 +309,20 @@ static void render_anim(void) {
 
     // assumes 1 frame prep stage
     void animation_phase(void) {
-        if (get_current_wpm() <= IDLE_SPEED && timer_elapsed32(active_timer) > ACTIVE_TIMEOUT) {
+        if (get_current_wpm() <= IDLE_SPEED && is_idle) {
             current_idle_frame = (current_idle_frame + 1) % IDLE_FRAMES;
             oled_write_raw_P(idle[abs((IDLE_FRAMES - 1) - current_idle_frame)], ANIM_SIZE);
         }
-        if (get_current_wpm() > IDLE_SPEED && get_current_wpm() < TAP_SPEED) {
+        if (get_current_wpm() > IDLE_SPEED && get_current_wpm() < TAP_SPEED && is_idle) {
             oled_write_raw_P(prep[0], ANIM_SIZE);  // remove if IDLE_FRAMES >1
         }
         if (get_current_wpm() >= TAP_SPEED) {
+            is_idle = false;
             render_status_main();
         }
+    }
+    if (timer_elapsed32(active_timer) > ACTIVE_TIMEOUT) {
+        is_idle = true;
     }
     if (get_current_wpm() != 000) {
         oled_on();  // not essential but turns on animation OLED with any alpha keypress
@@ -367,13 +372,6 @@ static void render_anim_secondary(void) {
 
 void render_space(void) {
     oled_write_P(PSTR("     "), false);
-}
-
-void print_clear_screen(void) {
-    oled_set_cursor(0, 0);
-    for (int i = 0; i < 16; i++) {
-        render_space();
-    }
 }
 
 void render_mod_status_gui_alt(uint8_t modifiers) {
@@ -541,7 +539,7 @@ void render_layer_state(void) {
 }
 
 void render_status_main(void) {
-    print_clear_screen();
+    oled_clear();
     render_logo();
     render_space();
     render_layer_state();
@@ -704,7 +702,7 @@ void render_luna(int LUNA_X, int LUNA_Y) {
 
 void print_status_narrow(void) {
     /* Print current mode */
-    print_clear_screen();
+    oled_clear();
 
     oled_set_cursor(0, 0);
     render_logo();
